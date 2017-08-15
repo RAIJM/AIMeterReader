@@ -10,7 +10,7 @@ def get_soup(url,header):
     return BeautifulSoup(urllib2.urlopen(urllib2.Request(url,headers=header)),'html.parser')
 
 
-query = "analog electric meter"# you can change the query for the image  here
+query = "digital electric meter"# you can change the query for the image  here
 image_type="Meter"
 query= query.split()
 query='+'.join(query)

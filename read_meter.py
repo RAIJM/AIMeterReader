@@ -33,14 +33,14 @@ DIGITS_LOOKUP = {
 }
 
 # load the example image
-image = cv2.imread("meter2.jpg")
+image = cv2.imread("meter10.jpg")
  
 # pre-process the image by resizing it, converting it to
 # graycale, blurring it, and computing an edge map
 image = imutils.resize(image, height=500)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-edged = cv2.Canny(blurred, 50, 200 , 255)
+edged = cv2.Canny(blurred, 30, 100 , 255)
 
 
 # find contours in the edge map, then sort them by their
@@ -55,7 +55,7 @@ displayCnt = None
 for c in cnts:
 	# approximate the contour
 	peri = cv2.arcLength(c, True)
-	approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+	approx = cv2.approxPolyDP(c, 0.01 * peri, True)
  
 	# if the contour has four vertices, then we have found
 	# the thermostat display
@@ -65,13 +65,14 @@ for c in cnts:
 
 # extract the thermostat display, apply a perspective transform
 # to it
+
 warped = four_point_transform(gray, displayCnt.reshape(4, 2))
 output = four_point_transform(image, displayCnt.reshape(4, 2))
 
 
 # threshold the warped image, then apply a series of morphological
 # operations to cleanup the thresholded image
-thresh = cv2.threshold(warped, 0, 255,
+'''thresh = cv2.threshold(warped, 200, 200,
 	cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (1, 2))
 thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
@@ -89,13 +90,14 @@ for c in cnts:
 	(x, y, w, h) = cv2.boundingRect(c)
  
 	# if the contour is sufficiently large, it must be a digit
-	if w >= 10 and (h >= 20 and h <= 50):
+	if w >= 15 and (h >= 20 and h <= 50):
 		digitCnts.append(c)
 		print("hello")
 		cv2.rectangle(thresh,(x,y),(x+w,y+h),(0,255,0),2)
 		bin_roi = thresh[y:y+h,x:x+w]
 		m = bin_roi != 0
 		if not 0.1 < m.mean() < 0.4:
+			print("hello")
 			continue
 		s = 1.5*float(h)/SZ
 		m = cv2.moments(bin_roi)
@@ -112,7 +114,7 @@ for c in cnts:
 
 		sample = preprocess_hog([bin_norm])
 		digit = model.predict(sample)[1][0]
-		print("THis digits is a %d " %cleadigit)
+		print("THis digits is a %d " %digit)
 		#roismall = cv2.resize(roi,(10,10))
 		plt.imshow(bin_roi)
 		plt.show()
@@ -128,7 +130,7 @@ for c in cnts:
 #anym_digits = []
 
 # loop over each of the digits
-'''for c in digitCnts:
+for c in digitCnts:
 	# extract the digit ROI
 	(x, y, w, h) = cv2.boundingRect(c)
 	roi = thresh[y:y + h, x:x + w]
@@ -179,6 +181,6 @@ for c in cnts:
 #cv2.imshow("Show",thresh)
 #cv2.waitKey()  
 #cv2.destroyAllWindows()
-plt.imshow(thresh)
+plt.imshow(output)
 plt.show()
 
