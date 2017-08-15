@@ -10,10 +10,11 @@ from six.moves import cPickle as pickle
 from six.moves import range
 from IPython.display import display, Image
 from scipy import ndimage
+import zipfile
+import gzip
 
 
-
-url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72X0tCS3J3Uy1FQ3M'
+url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72cENaN0U1am05S1k'
 last_percent_reported = None
 data_root = '.'
 def download_progress_hook(count, blockSize, totalSize):
@@ -45,5 +46,29 @@ def maybe_download(filename,force=False):
 	return dest_filename
 
 
-data_filename = maybe_download('meter_dataset.zip')
+data_filename = maybe_download('meter_dataset.tar.gz')
+
+num_classes = 2
+
+def mabye_extract(filename, force=False):
+	root = os.path.splitext(os.path.splitext(filename)[0])[0]
+	if os.path.isdir(root) and not force:
+		print("%s already present - Skipping extraction of %s. " % (root,filename))
+	else:
+		print("Extracting data for %s This may take a while. Please wait. " %root)
+		tar = tarfile.open(filename)
+		sys.stdout.flush()
+		tar.extractall(data_root)
+		tar.close()
+	data_folders = [
+		os.path.join(root, d) for d in sorted(os.listdir(root))
+		if os.path.isdir(os.path.join(root, d))]
+	if len(data_folders) != num_classes:
+		raise Exception(
+			'Expected %d folders, one per class. Found %d instead.' %(num_classes, len(data_folders)))
+	print(data_folders)
+	return data_folders
+
+
+data_folders = mabye_extract(data_filename)
 
