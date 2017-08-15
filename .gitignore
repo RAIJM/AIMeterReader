@@ -4,3 +4,4 @@ Meter\ Images/
 *.zip
 *.tar.gz
 meter_dataset/
+*.pickle
