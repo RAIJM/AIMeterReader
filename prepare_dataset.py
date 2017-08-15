@@ -8,11 +8,10 @@ import IPython.display
 from six.moves.urllib.request import urlretrieve
 from six.moves import cPickle as pickle
 from six.moves import range
-from IPython.display import display, Image
+#from IPython.display import display, Image
+from PIL import Image
 from scipy import ndimage
-import zipfile
 import gzip
-
 
 url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72cENaN0U1am05S1k'
 last_percent_reported = None
@@ -72,3 +71,31 @@ def mabye_extract(filename, force=False):
 
 data_folders = mabye_extract(data_filename)
 
+
+image_size = 96
+
+def load_class(folder):
+	image_files = os.listdir(folder)
+	dataset = np.ndarray(shape=(len(image_files),image_size,image_size),dtype=np.float32)
+
+	print(folder)
+	num_images = 0
+	for image in image_files:
+		image_file = os.path.join(folder,image)
+		try:
+			image_data = Image.open(image_file) #opens image
+			image_data = image_data.convert('L') #converts to grayscale
+			image_data = image_data.resize((image_size,image_size)) #resize image to 96x96
+			imarray = np.array(image_data,dtype='float32')
+			dataset[num_images,:,:] = imarray
+			num_images += 1
+		except IOError as e:
+			print('Could not read:',image_file,':',e)
+
+	dataset = dataset[0:num_images,:,:]
+	print('Shape',dataset.shape)
+	return dataset
+
+dataset = load_class(data_folders[0])
+plt.imshow(dataset[0])
+plt.show()
