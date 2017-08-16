@@ -12,6 +12,8 @@ from six.moves import range
 from PIL import Image
 from scipy import ndimage
 import gzip
+import tensorflow as tf
+
 
 url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72cENaN0U1am05S1k'
 last_percent_reported = None
@@ -177,7 +179,9 @@ test_dataset,test_size = randomize(test_dataset,test_labels)
 print('Training:', train_dataset.shape,train_labels.shape)
 print('Validation', valid_dataset.shape,valid_labels.shape)
 print('Testing', test_dataset.shape,test_labels.shape)
-
+print('Example',train_labels)
+res = tf.one_hot(indices=train_labels,depth=2)
+print('One Hot',res)
 pickle_file = 'meterData.pickle'
 try:
 	f = open(pickle_file, 'wb')
