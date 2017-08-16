@@ -180,7 +180,8 @@ print('Training:', train_dataset.shape,train_labels.shape)
 print('Validation', valid_dataset.shape,valid_labels.shape)
 print('Testing', test_dataset.shape,test_labels.shape)
 print('Example',train_labels)
-res = tf.one_hot(indices=train_labels,depth=2)
+#res = tf.one_hot(indices=train_labels,depth=2)
+res = (np.arange(2) == train_labels[:,None]).astype(np.int32)
 print('One Hot',res)
 pickle_file = 'meterData.pickle'
 try:

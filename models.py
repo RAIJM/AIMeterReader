@@ -30,11 +30,11 @@ class MeterModel:
 
 		flatten = tf.reshape(hidden3,[-1,12 * 12 * 128])
 
-		with tf.variable_scope(hidden4):
+		with tf.variable_scope('hidden4'):
 			dense = tf.layers.dense(flatten,units=1024,activation=tf.nn.relu)
 			hidden4 = dense
 
-		with tf.variable(output):
+		with tf.variable_scope('output'):
 			dense = tf.layers.dense(hidden4,units=2)
 			output = dense
 
