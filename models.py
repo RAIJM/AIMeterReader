@@ -4,7 +4,7 @@ import tensorflow as tf
 
 class MeterModel:
 
-
+	@staticmethod
 	def inference(x,drop_prob):
 
 		with tf.variable_scope('hidden1'):
@@ -40,6 +40,7 @@ class MeterModel:
 
 		return output
 
+	@staticmethod
 	def loss(output_logits,labels):
 		loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels,logits=output_logits))
 		return loss
