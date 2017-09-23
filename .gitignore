@@ -5,3 +5,4 @@ Meter\ Images/
 *.tar.gz
 meter_dataset/
 *.pickle
+*.jpg

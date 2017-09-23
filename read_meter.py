@@ -7,6 +7,7 @@ import cv2
 import matplotlib.pyplot as plt
 from digits import *
 import numpy as np
+import sys
 #import sys
 
 #sys.path.append('/usr/local/lib/python2.7/site-packages')
@@ -33,7 +34,7 @@ DIGITS_LOOKUP = {
 }
 
 # load the example image
-image = cv2.imread("meter10.jpg")
+image = cv2.imread(sys.argv[1])
  
 # pre-process the image by resizing it, converting it to
 # graycale, blurring it, and computing an edge map
@@ -50,7 +51,9 @@ cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
 cnts = cnts[0] if imutils.is_cv2() else cnts[1]
 cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
 displayCnt = None
- 
+
+
+#rec_contours = []
 # loop over the contours
 for c in cnts:
 	# approximate the contour
@@ -62,21 +65,32 @@ for c in cnts:
 	if len(approx) == 4:
 		displayCnt = approx
 		break
+		
 
 # extract the thermostat display, apply a perspective transform
 # to it
 
+#for rec in rec_contours:
 warped = four_point_transform(gray, displayCnt.reshape(4, 2))
 output = four_point_transform(image, displayCnt.reshape(4, 2))
+#plt.imshow(output)
+#plt.show()
 
 
 # threshold the warped image, then apply a series of morphological
 # operations to cleanup the thresholded image
-'''thresh = cv2.threshold(warped, 200, 200,
+'''thresh = cv2.threshold(warped, 5, 5,
 	cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (1, 2))
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 5))
 thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
+blur = cv2.GaussianBlur(warped,(5,5),0)
+thresh = cv2.adaptiveThreshold(blur,255,1,1,11,2)'''
+thresh = cv2.adaptiveThreshold(warped, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 21, 7)
+thresh = cv2.medianBlur(thresh, 2)
+
+plt.imshow(thresh)
+plt.show()
 # find contours in the thresholded image, then initialize the
 # digit contours lists
 cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
@@ -88,17 +102,18 @@ digitCnts = []
 for c in cnts:
 	# compute the bounding box of the contour 
 	(x, y, w, h) = cv2.boundingRect(c)
+	print(len(cnts))
  
 	# if the contour is sufficiently large, it must be a digit
-	if w >= 15 and (h >= 20 and h <= 50):
+	if w >= 15 and (h >= 30 and h <= 50):
 		digitCnts.append(c)
 		print("hello")
 		cv2.rectangle(thresh,(x,y),(x+w,y+h),(0,255,0),2)
 		bin_roi = thresh[y:y+h,x:x+w]
 		m = bin_roi != 0
-		if not 0.1 < m.mean() < 0.4:
-			print("hello")
-			continue
+		#if not 0.1 < m.mean() < 0.4:
+		#	print("hello")
+		#	continue
 		s = 1.5*float(h)/SZ
 		m = cv2.moments(bin_roi)
 		c1 = np.float32([m['m10'], m['m01']]) / m['m00']
@@ -123,7 +138,7 @@ for c in cnts:
 
 
 
-
+'''
 #digitCnts = contours.sort_contours(digitCnts,
 	#method="left-to-right")[0]
 #digits = []
@@ -181,6 +196,6 @@ for c in digitCnts:
 #cv2.imshow("Show",thresh)
 #cv2.waitKey()  
 #cv2.destroyAllWindows()
-plt.imshow(output)
-plt.show()
+#plt.imshow(output)
+#plt.show()
 

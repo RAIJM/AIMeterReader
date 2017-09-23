@@ -9,26 +9,29 @@ class MeterModel:
 
 		with tf.variable_scope('hidden1'):
 			conv = tf.layers.conv2d(x,filters=32,kernel_size=[5,5],padding='SAME')
-			activation = tf.nn.relu(conv)
-			pool = tf.layers.max_pooling2d(activation,pool_size=[2,2],stride=2,padding='same')
+			norm = tf.layers.batch_normalization(conv)
+			activation = tf.nn.relu(norm)
+			pool = tf.layers.max_pooling2d(activation,pool_size=[2,2],strides=2,padding='same')
 			dropout = tf.layers.dropout(pool, rate=drop_prob)
 			hidden1 = dropout
 
 		with tf.variable_scope('hidden2'):
 			conv = tf.layers.conv2d(hidden1, filters=64,kernel_size=[5,5],padding='same')
-			activation = tf.nn.relu(conv)
-			pool = tf.layers.max_pooling2d(activation,pool_size=[2,2],stride=2,padding='same')
+			norm = tf.layers.batch_normalization(conv)
+			activation = tf.nn.relu(norm)
+			pool = tf.layers.max_pooling2d(activation,pool_size=[2,2],strides=2,padding='same')
 			dropout = tf.layers.dropout(pool, rate=drop_prob)
 			hidden2 = dropout
 
 		with tf.variable_scope('hidden3'):
 			conv = tf.layers.conv2d(hidden2, filters=128, kernel_size=[5,5],padding='same')
-			activation = tf.nn.relu(conv)
-			pool = tf.layers.max_pooling2d(activation,pool_size=[2,2],stride=2,padding='same')
+			norm = tf.layers.batch_normalization(conv)
+			activation = tf.nn.relu(norm)
+			pool = tf.layers.max_pooling2d(activation,pool_size=[2,2],strides=2,padding='same')
 			dropout = tf.layers.dropout(pool,rate=drop_prob)
 			hidden3 = dropout
 
-		flatten = tf.reshape(hidden3,[-1,12 * 12 * 128])
+		flatten = tf.reshape(hidden3,[-1,6 * 6 * 128])
 
 		with tf.variable_scope('hidden4'):
 			dense = tf.layers.dense(flatten,units=1024,activation=tf.nn.relu)
