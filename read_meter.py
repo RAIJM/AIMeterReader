@@ -19,7 +19,23 @@ classifier_fn = "digits_svm.dat"
 
 model = cv2.ml.SVM_load(classifier_fn)
 
+blur_block_size = 25 # odd
+threshold_block_size = 31 # odd
+threshold_constant = 3
+threshold = 110 # region average pixel value segment detection limit
+morph_block_size = 8
 
+
+def process_image(SSD):
+    """Process SSD image."""
+    gray = cv2.cvtColor(SSD, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (blur_block_size, blur_block_size), 0)
+    thresh = cv2.adaptiveThreshold(blur, 255, 
+          cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
+          threshold_block_size, threshold_constant)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_ERODE,
+          np.ones((morph_block_size, morph_block_size), np.uint8))
+    return thresh
 DIGITS_LOOKUP = {
 	(1, 1, 1, 0, 1, 1, 1): 0,
 	(0, 0, 1, 0, 0, 1, 0): 1,
@@ -55,6 +71,7 @@ displayCnt = None
 
 #rec_contours = []
 # loop over the contours
+rec_contours = []
 for c in cnts:
 	# approximate the contour
 	peri = cv2.arcLength(c, True)
@@ -62,19 +79,25 @@ for c in cnts:
  
 	# if the contour has four vertices, then we have found
 	# the thermostat display
+
 	if len(approx) == 4:
-		displayCnt = approx
-		break
+		rec_contours.append(approx)
+
+		
 		
 
 # extract the thermostat display, apply a perspective transform
 # to it
 
-#for rec in rec_contours:
-warped = four_point_transform(gray, displayCnt.reshape(4, 2))
-output = four_point_transform(image, displayCnt.reshape(4, 2))
-#plt.imshow(output)
-#plt.show()
+for rec in rec_contours:
+	warped = four_point_transform(gray, rec.reshape(4, 2))
+	output = four_point_transform(image, rec.reshape(4, 2))
+	new_output = process_image(output)
+	plt.imshow(output)
+	plt.show()
+	plt.imshow(new_output)
+	plt.show()
+
 
 
 # threshold the warped image, then apply a series of morphological
@@ -86,7 +109,7 @@ thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
 blur = cv2.GaussianBlur(warped,(5,5),0)
 thresh = cv2.adaptiveThreshold(blur,255,1,1,11,2)'''
-thresh = cv2.adaptiveThreshold(warped, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 21, 7)
+'''thresh = cv2.adaptiveThreshold(warped, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 21, 7)
 thresh = cv2.medianBlur(thresh, 2)
 
 plt.imshow(thresh)
@@ -145,7 +168,7 @@ for c in cnts:
 #anym_digits = []
 
 # loop over each of the digits
-for c in digitCnts:
+'''for c in digitCnts:
 	# extract the digit ROI
 	(x, y, w, h) = cv2.boundingRect(c)
 	roi = thresh[y:y + h, x:x + w]
@@ -189,7 +212,7 @@ for c in digitCnts:
 		cv2.putText(output, str(digit), (x - 10, y - 10),
 			cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 0), 2)
 	else:
-		anym_digits.append(tuple(on))'''
+		anym_digits.append(tuple(on))
 
 #print(digits)
 #print(anym_digits)
@@ -197,5 +220,5 @@ for c in digitCnts:
 #cv2.waitKey()  
 #cv2.destroyAllWindows()
 #plt.imshow(output)
-#plt.show()
+#plt.show()'''
 

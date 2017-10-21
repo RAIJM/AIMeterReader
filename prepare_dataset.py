@@ -13,13 +13,21 @@ from PIL import Image
 from scipy import ndimage
 import gzip
 import tensorflow as tf
+import unittest
 
 
 url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72cENaN0U1am05S1k'
 last_percent_reported = None
 data_root = '.'
-def download_progress_hook(count, blockSize, totalSize):
+num_classes = 2
+image_size = 48
+train_size = 1200
+valid_size = 100
+test_size = 400
 
+
+
+def download_progress_hook(count, blockSize, totalSize):
 	global last_percent_reported
 	percent = int(count * blockSize * 100 / totalSize)
 
@@ -47,9 +55,6 @@ def maybe_download(filename,force=False):
 	return dest_filename
 
 
-data_filename = maybe_download('meter_dataset.tar.gz')
-
-num_classes = 2
 
 def mabye_extract(filename, force=False):
 	root = os.path.splitext(os.path.splitext(filename)[0])[0]
@@ -70,11 +75,6 @@ def mabye_extract(filename, force=False):
 	print(data_folders)
 	return data_folders
 
-
-data_folders = mabye_extract(data_filename)
-
-
-image_size = 48
 
 def load_class(folder):
 	image_files = os.listdir(folder)
@@ -116,18 +116,6 @@ def mabye_pickle(folders,force=False):
 	return dataset_names
 
 
-
-
-
-#dataset = load_class(data_folders[0])
-#plt.imshow(dataset[0])
-#plt.show()
-dataset_names = mabye_pickle(data_folders)
-
-train_size = 1200
-valid_size = 100
-test_size = 400
-
 def make_arrays(num_rows,image_size):
 	if num_rows:
 		dataset = np.ndarray((num_rows,image_size,image_size),dtype=np.float32)
@@ -135,6 +123,7 @@ def make_arrays(num_rows,image_size):
 	else:
 		dataset,labels = None,None
 	return dataset,labels
+
 
 def merge_datasets(pickle_files,train_size,valid_size,test_size):
 	num_classes = len(pickle_files)
@@ -164,55 +153,54 @@ def merge_datasets(pickle_files,train_size,valid_size,test_size):
 	return train_dataset,train_labels,valid_dataset,valid_labels,test_dataset,test_labels
 
 
-train_dataset,train_labels,valid_dataset,valid_labels,test_dataset,test_labels = merge_datasets(dataset_names,train_size,valid_size,test_size)
-
 def randomize(dataset,labels):
-	#permutation = np.random.permutation(labels.shape[0])
 	randomize = np.arange(len(labels))
 	np.random.shuffle(randomize)
 	shuffled_dataset = dataset[randomize,:,:]
 	shuffled_labels = labels[randomize]
 	return shuffled_dataset, shuffled_labels
 
-print("Before Shuffle")
-print('Test',test_labels)
-print ('Train',train_labels)
-print('Valid',valid_labels)
 
-np.random.seed(4)
+def pickle_dataset(train_data,train_labels,valid_data,valid_labels,test_data,test_labels):
+	pickle_file = 'meterData.pickle'
+	try:
+		f = open(pickle_file, 'wb')
+		save = {
+		     'train_dataset': train_data,
+		     'train_labels': train_labels,
+		     'valid_dataset': valid_datas,
+		     'valid_labels': valid_labels,
+		     'test_dataset': test_data,
+		     'test_labels': test_labels,
+		}
+		pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
+		f.close()
+	except Exception as e:
+		print('Unable to save data to',pickle_file,':',e)
 
-train_dataset,train_labels = randomize(train_dataset,train_labels)
-valid_dataset,valid_labels = randomize(valid_dataset,valid_labels)
-test_dataset,test_labels = randomize(test_dataset,test_labels)
+	statinfo = os.stat(pickle_file)
+	print('Compressed pcikle size:', statinfo.st_size)
 
-print('Training:', train_dataset.shape,train_labels.shape)
-print('Validation', valid_dataset.shape,valid_labels.shape)
-print('Testing', test_dataset.shape,test_labels.shape)
-print('Example',train_labels)
-print('Test',test_labels)
-print('Valid',valid_labels)
-#res = tf.one_hot(indices=train_labels,depth=2)
-print(type(test_labels))
-res = (np.arange(2) == test_labels[:,None]).astype(np.int32)
-print('One Hot',res)
-pickle_file = 'meterData.pickle'
-try:
-	f = open(pickle_file, 'wb')
-	save = {
-	     'train_dataset': train_dataset,
-	     'train_labels': train_labels,
-	     'valid_dataset': valid_dataset,
-	     'valid_labels': valid_labels,
-	     'test_dataset': test_dataset,
-	     'test_labels': test_labels,
-	}
-	pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
-	f.close()
-except Exception as e:
-	print('Unable to save data to',pickle_file,':',e)
 
-statinfo = os.stat(pickle_file)
-print('Compressed pcikle size:', statinfo.st_size)
+def main():
+	data_filename = maybe_download('meter_dataset.tar.gz')
+	data_folders = mabye_extract(data_filename)
+	dataset_names = mabye_pickle(data_folders)
+	train_dataset,train_labels,valid_dataset,valid_labels,test_dataset,test_labels = merge_datasets(dataset_names,
+																					train_size,valid_size,test_size)
+	train_dataset,train_labels = randomize(train_dataset,train_labels)
+	valid_dataset,valid_labels = randomize(valid_dataset,valid_labels)
+	test_dataset,test_labels = randomize(test_dataset,test_labels)
+	pickle_dataset(train_dataset,train_labels,valid_dataset,valid_labels,test_dataset,test_labels)
+
+if __name__ == "__main__":
+	main()
+
+def fun(x):
+    return x + 1
+
+
+
 
 
 

@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 
 batch_size = 50
 learning_rate = 0.0001
-num_epochs = 20
+num_epochs = 40
 drop_rate = 0.5
 log_dir = '/tmp/meter'
 
