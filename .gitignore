@@ -6,3 +6,7 @@ Meter\ Images/
 meter_dataset/
 *.pickle
 *.jpg
+app/data/
+app/digital_meter_model/
+data/
+digital_meter_model/

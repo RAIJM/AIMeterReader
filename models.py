@@ -31,7 +31,7 @@ class MeterModel:
 			dropout = tf.layers.dropout(pool,rate=drop_prob)
 			hidden3 = dropout
 
-		flatten = tf.reshape(hidden3,[-1,6 * 6 * 128])
+		flatten = tf.reshape(hidden3,[-1,12 * 12 * 128])
 
 		with tf.variable_scope('hidden4'):
 			dense = tf.layers.dense(flatten,units=1024,activation=tf.nn.relu)

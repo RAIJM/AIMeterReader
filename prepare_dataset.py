@@ -20,7 +20,7 @@ url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72cENaN0U1am05S
 last_percent_reported = None
 data_root = '.'
 num_classes = 2
-image_size = 48
+image_size = 96
 train_size = 1200
 valid_size = 100
 test_size = 400
@@ -168,7 +168,7 @@ def pickle_dataset(train_data,train_labels,valid_data,valid_labels,test_data,tes
 		save = {
 		     'train_dataset': train_data,
 		     'train_labels': train_labels,
-		     'valid_dataset': valid_datas,
+		     'valid_dataset': valid_data,
 		     'valid_labels': valid_labels,
 		     'test_dataset': test_data,
 		     'test_labels': test_labels,

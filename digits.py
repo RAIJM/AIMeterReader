@@ -3,7 +3,7 @@
 '''
 SVM and KNearest digit recognition.
 
-Sample loads a dataset of handwritten digits from 'digits.png'.
+Sample loads a dataset of handwritten digits from '../data/digits.png'.
 Then it trains a SVM and KNearest classifiers on it and evaluates
 their accuracy.
 
@@ -23,15 +23,26 @@ Usage:
    digits.py
 '''
 
-import numpy as np
-import cv2
+
+# Python 2/3 compatibility
+from __future__ import print_function
+
+# built-in modules
 from multiprocessing.pool import ThreadPool
-#from common import clock, mosaic
+
+import cv2
+
+import numpy as np
 from numpy.linalg import norm
+
+# local modules
+#from common import clock, mosaic
+
+
 
 SZ = 20 # size of each digit is SZ x SZ
 CLASS_N = 10
-DIGITS_FN = 'data/digits.png'
+DIGITS_FN = 'digits.png'
 
 def split2d(img, cell_size, flatten=True):
     h, w = img.shape[:2]
@@ -43,7 +54,7 @@ def split2d(img, cell_size, flatten=True):
     return cells
 
 def load_digits(fn):
-    print 'loading "%s" ...' % fn
+    print('loading "%s" ...' % fn)
     digits_img = cv2.imread(fn, 0)
     digits = split2d(digits_img, (SZ, SZ))
     labels = np.repeat(np.arange(CLASS_N), len(digits)/CLASS_N)
@@ -60,50 +71,48 @@ def deskew(img):
 
 class StatModel(object):
     def load(self, fn):
-        self.model.load(fn)
+        self.model.load(fn)  # Known bug: https://github.com/Itseez/opencv/issues/4969
     def save(self, fn):
         self.model.save(fn)
 
 class KNearest(StatModel):
     def __init__(self, k = 3):
         self.k = k
-        self.model = cv2.KNearest()
+        self.model = cv2.ml.KNearest_create()
 
     def train(self, samples, responses):
-        self.model = cv2.KNearest()
-        self.model.train(samples, responses)
+        self.model.train(samples, cv2.ml.ROW_SAMPLE, responses)
 
     def predict(self, samples):
-        retval, results, neigh_resp, dists = self.model.find_nearest(samples, self.k)
+        retval, results, neigh_resp, dists = self.model.findNearest(samples, self.k)
         return results.ravel()
 
 class SVM(StatModel):
     def __init__(self, C = 1, gamma = 0.5):
-        self.params = dict( kernel_type = cv2.SVM_RBF,
-                            svm_type = cv2.SVM_C_SVC,
-                            C = C,
-                            gamma = gamma )
-        self.model = cv2.SVM()
+        self.model = cv2.ml.SVM_create()
+        self.model.setGamma(gamma)
+        self.model.setC(C)
+        self.model.setKernel(cv2.ml.SVM_RBF)
+        self.model.setType(cv2.ml.SVM_C_SVC)
 
     def train(self, samples, responses):
-        self.model = cv2.SVM()
-        self.model.train(samples, responses, params = self.params)
+        self.model.train(samples, cv2.ml.ROW_SAMPLE, responses)
 
     def predict(self, samples):
-        return self.model.predict_all(samples).ravel()
+        return self.model.predict(samples)[1].ravel()
 
 
 def evaluate_model(model, digits, samples, labels):
     resp = model.predict(samples)
     err = (labels != resp).mean()
-    print 'error: %.2f %%' % (err*100)
+    print('error: %.2f %%' % (err*100))
 
     confusion = np.zeros((10, 10), np.int32)
     for i, j in zip(labels, resp):
         confusion[i, j] += 1
-    print 'confusion matrix:'
-    print confusion
-    print
+    print('confusion matrix:')
+    print(confusion)
+    print()
 
     vis = []
     for img, flag in zip(digits, resp == labels):
@@ -140,17 +149,17 @@ def preprocess_hog(digits):
 
 
 if __name__ == '__main__':
-    print __doc__
+    print(__doc__)
 
     digits, labels = load_digits(DIGITS_FN)
 
-    print 'preprocessing...'
+    print('preprocessing...')
     # shuffle digits
     rand = np.random.RandomState(321)
     shuffle = rand.permutation(len(digits))
     digits, labels = digits[shuffle], labels[shuffle]
 
-    digits2 = map(deskew, digits)
+    digits2 = list(map(deskew, digits))
     samples = preprocess_hog(digits2)
 
     train_n = int(0.9*len(samples))
@@ -160,18 +169,18 @@ if __name__ == '__main__':
     labels_train, labels_test = np.split(labels, [train_n])
 
 
-    print 'training KNearest...'
+    print('training KNearest...')
     model = KNearest(k=4)
     model.train(samples_train, labels_train)
     vis = evaluate_model(model, digits_test, samples_test, labels_test)
     cv2.imshow('KNearest test', vis)
 
-    print 'training SVM...'
+    print('training SVM...')
     model = SVM(C=2.67, gamma=5.383)
     model.train(samples_train, labels_train)
     vis = evaluate_model(model, digits_test, samples_test, labels_test)
     cv2.imshow('SVM test', vis)
-    print 'saving SVM as "digits_svm.dat"...'
+    print('saving SVM as "digits_svm.dat"...')
     model.save('digits_svm.dat')
 
     cv2.waitKey(0)

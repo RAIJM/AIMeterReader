@@ -10,9 +10,9 @@ from pynput import keyboard
 
 
 
-'''sorted_names = []
-if(os.path.exists('image_names.txt')):
-	with open('image_names.txt','r') as f:
+sorted_names = []
+if(os.path.exists('meter_readings.txt')):
+	with open('meter_readings.txt','r') as f:
 		lines = f.read().split("\n")
 		#print(lines)
 		sorted_names = [(l.strip().split()[0]).split("/")[-1] for l in lines if len(l)>0]
@@ -33,25 +33,27 @@ def get_filenames(folder):
 	return files
 
 
-folder = '/home/stone/Documents/MeterImages'
+folder = '/home/stone/Documents/MeterImages/digital'
 files = get_filenames(folder)
 print(len(files))
 
-with open('image_names.txt','a+') as f:
+with open('meter_readings.txt','a+') as f:
 	for file in files:
 		img = mpimg.imread(file)
 		imgplot = plt.imshow(img)
 		plt.draw()
 		plt.pause(0.0005)
-		i = input('Enter folder number(1=analog,2=digital,3=other,4=exit)\n')
-		if(i==1):
-			folder_name = os.path.join(folder,'analogue')
-		elif(i==2):
-			folder_name = os.path.join(folder,'digital')
-		elif(i==4):
+		i = raw_input('Enter reading - press q to exit)\n')
+		if(i=="q"):
 			break
-		else:
-			folder_name = os.path.join(folder,'other')
+		# if(i=='q'):
+		# 	folder_name = os.path.join(folder,'analogue')
+		# elif(i==2):
+		# 	folder_name = os.path.join(folder,'digital')
+		# elif(i==4):
+		# 	break
+		# else:
+		# 	folder_name = os.path.join(folder,'other')
 		file_name = file.split('/')[-1]
 		f.write(file+" "+ str(i)+"\n")
 
@@ -89,8 +91,8 @@ def move_files_to_folder():
 						os.rename(file,os.path.join(folder_name,file_name))
 			f.close()
 
-if __name__ == "__main__":
-    move_files_to_folder()
+#if __name__ == "__main__":
+    #move_files_to_folder()
 
 
 

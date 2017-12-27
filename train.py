@@ -8,7 +8,7 @@ from six.moves import cPickle as pickle
 
 batch_size = 50
 learning_rate = 0.0001
-num_epochs = 40
+num_epochs = 30
 drop_rate = 0.5
 log_dir = '/tmp/meter'
 
@@ -50,10 +50,10 @@ def train(path_to_dataset):
 	valid_labels = vector_to_one_hot(valid_labels)
 	test_labels = vector_to_one_hot(test_labels)
 
-	x = tf.placeholder(tf.float32,[None,48,48])
+	x = tf.placeholder(tf.float32,[None,96,96])
 	y_ = tf.placeholder(tf.float32,[None,2])
 
-	x_tensor = tf.reshape(x,[-1, 48, 48, 1])
+	x_tensor = tf.reshape(x,[-1, 96, 96, 1])
 
 	output = MeterModel.inference(x_tensor,0.5)
 	
@@ -70,6 +70,8 @@ def train(path_to_dataset):
 	tf.summary.scalar("accuracy", accuracy)
 
 	summary_op = tf.summary.merge_all()
+
+	saver = tf.train.Saver()
 
 	with tf.Session() as sess:
 		sess.run(tf.global_variables_initializer())
@@ -95,6 +97,8 @@ def train(path_to_dataset):
 
 		test_accuracy = sess.run(accuracy,feed_dict={x:test_data,y_:test_labels})
 		print("Test accuracy ", test_accuracy)
+		save_path = saver.save(sess, "/tmp/model.ckpt")
+  		print("Model saved in file: %s" % save_path)
 
 
 
