@@ -10,3 +10,9 @@ app/data/
 app/digital_meter_model/
 data/
 digital_meter_model/
+*.ckpt.*
+*.pbtxt
+analog_meter_model/
+meter_model/
+app/analog_meter_model
+app/meter_model

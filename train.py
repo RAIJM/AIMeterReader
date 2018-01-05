@@ -78,6 +78,11 @@ def train(path_to_dataset):
 
 		writer = tf.summary.FileWriter(log_dir, graph=tf.get_default_graph())
 
+		tf.train.write_graph(sess.graph_def, '.', 'meter_model.pbtxt')  
+
+		l = [n.name for n in tf.get_default_graph().as_graph_def().node]
+		print(l)
+
 		batch_count = num_train_examples // batch_size
 		for epoch_i in range(num_epochs):
 			batch_pos = 0
@@ -97,7 +102,7 @@ def train(path_to_dataset):
 
 		test_accuracy = sess.run(accuracy,feed_dict={x:test_data,y_:test_labels})
 		print("Test accuracy ", test_accuracy)
-		save_path = saver.save(sess, "/tmp/model.ckpt")
+		save_path = saver.save(sess, "/home/stone/meter_model.ckpt")
   		print("Model saved in file: %s" % save_path)
 
 

@@ -23,6 +23,7 @@
                           var filePath = 'static/uploads/' + response.filename;
                           $('#imgUpload').attr('src',filePath);
                           $('#reading').text("Reading: " + response.reading)
+                          $('#meter_type').text("Meter Type: " + response.meter_type)
                           //$('#filePath').vailePath);
                           console.log('success');
                         },
@@ -58,6 +59,7 @@
    <body>
    
       <h1>Meter Reader</h1>
+      <h3 id="meter_type">Meter Type: </h3>
       <h3 id="reading">Reading: </h3>
       <form role="form" method="post" enctype=multipart/form-data>
 
