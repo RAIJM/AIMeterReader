@@ -33,6 +33,8 @@ class DigitalMeterModel:
                                                             use_display_name=True)
 		self.category_index = label_map_util.create_category_index(categories)
 
+
+		#create a tensorflow graph from graph definition from file
 		detection_graph = tf.Graph()
 		with detection_graph.as_default():
 			od_graph_def = tf.GraphDef()
@@ -47,10 +49,12 @@ class DigitalMeterModel:
 		self.sess = tf.Session(graph=detection_graph)
 		
 
+	#Used to convert opencv image to numpy array
 	def load_cvimage_into_numpy_array(self,image):
 		im_width = image.shape[1]
 		im_height = image.shape[0]
 		return image.reshape((im_height,im_width,3)).astype(np.uint8)
+
 
 
 	def detect_objects(self,image_np,sess,detection_graph):
@@ -95,8 +99,13 @@ class DigitalMeterModel:
 
 
 	def predict_reading(self,cv_image):
+
+		#resize image
 		img = imutils.resize(cv_image,width=400,height=300)
+		
+		#rotate image due to how model was trained
 		img = imutils.rotate(img,90)
+
 
 		image_np = self.load_cvimage_into_numpy_array(cv_image)
 
@@ -108,15 +117,14 @@ class DigitalMeterModel:
 
 		img = data['image_np']
 
+		#sort bounding rects by ymin
 		sorted_by_second = sorted(zip(rec_points, class_names), key=lambda tup: tup[0]['ymin'], reverse=True)
 
-		
-
 		reading = ''
+		#append prediction to reading
 		for el in sorted_by_second:
 			reading+=el[1][0][0]
-       	
-		
+       		
 		return img,reading
 
 
@@ -141,9 +149,7 @@ class AnalogMeterModel:
 		self.category_index = label_map_util.create_category_index(categories)
 
 
-		#MODEL_NAME = 'meter_model'
-		#PATH_TO_CKPT = MODEL_NAME + '/frozen_meter_model.pb'
-
+		#create a tensorflow graph from graph definition from file
 		detection_graph = tf.Graph()
 		with detection_graph.as_default():
 			od_graph_def = tf.GraphDef()
@@ -157,43 +163,64 @@ class AnalogMeterModel:
 		self.detection_graph = detection_graph
 		self.sess = tf.Session(graph=detection_graph)
 
+	
+
 	def load_cvimage_into_numpy_array(self,image):
 		im_width = image.shape[1]
 		im_height = image.shape[0]
 		return image.reshape((im_height,im_width,3)).astype(np.uint8)
 
 
+
+	'''
+		Args: numpy image, cw/ccw
+		Returns: reading between 0-9
+		Takes a numpy image and wheter it is cw(even) or ccw(odd) and predicts the corresponding number
+
+
+
+	'''
 	def read_digit(self,image_np,count):
 	    
 		height = image_np.shape[1]
 		width = image_np.shape[0]
+
+		#convert to grayscale to  be able to threshold
 		gray = cv2.cvtColor(image_np,cv2.COLOR_BGR2GRAY)
 
+		#return to upright orientation
 		rot = imutils.rotate(gray,90)
 	   
+
+		#threshold and open to isloate the pointer
 		thresh = cv2.adaptiveThreshold(rot.copy(),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
 	            cv2.THRESH_BINARY_INV,25,10)
 		kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
 		thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
 
+		#find the resulting countours
 		im2, contours, hierarchy = cv2.findContours(thresh, 1, 2)
 
+
+		#select the largest contour as that should be the pointer
 		cnt = max(contours, key = cv2.contourArea)
 
+
+		#calculate the center of the pointer
 		M = cv2.moments(cnt)
-
-		cimg = np.zeros_like(thresh)
-		cv2.drawContours(cimg, contours, contours.index(cnt), color=255, thickness=-1)
-		pts = np.where(cimg == 255)
-
-		arr = zip(pts[0],pts[1])
-	   
 
 		cx = int(M['m10']/M['m00'])
 		cy = int(M['m01']/M['m00'])
-	 
 
+
+		#find all the white pixels
+		cimg = np.zeros_like(thresh)
+		cv2.drawContours(cimg, contours, contours.index(cnt), color=255, thickness=-1)
+		pts = np.where(cimg == 255)
+		arr = zip(pts[0],pts[1])
+	   
+		#find the furthest white pixel as that should be the tip of the pointer
 		max_dist = 0
 		max_pixel = None
 		for pixel in arr:
@@ -201,24 +228,29 @@ class AnalogMeterModel:
 			if dist > max_dist:
 				max_pixel = pixel
 				max_dist = dist
-	    
-
+	   
 		tx = max_pixel[1]
 		ty = max_pixel[0]
+		
+
+		#calculate angle made by center and the tip of the pointer
 		theta = math.atan2((ty-cy),(tx-cx))
 		phi = math.asin((cy - ty) / math.sqrt(((cy - ty)**2) + ((cx - tx) **2)))
 
 		degrees = math.degrees(theta)
 
+		#take into account 90 degree offset
 		if degrees >90 and degrees <=180:
 			angle = (degrees -180) - 90
 		else:
 			angle = degrees + 90
 
+
+		#convert to from 180/-180 to 0-360
 		angle = angle % 360
 
-		print(angle)
 
+		#convert corresponding angle to number based on cw/ccw
 		if angle>=0 and angle <= 36:
 			if count % 2 == 0:
 				reading = 0
@@ -303,43 +335,43 @@ class AnalogMeterModel:
 	        min_score_thresh=.5
 	    )
 
-	    # Visualization of the results of a detection.
-	    # vis_util.visualize_boxes_and_labels_on_image_array(
-	    #     image_np,
-	    #     np.squeeze(boxes),
-	    #     np.squeeze(classes).astype(np.int32),
-	    #     np.squeeze(scores),
-	    #     category_index,
-	    #     use_normalized_coordinates=True,
-	    #     line_thickness=2)
-	    # #plt.figure(figsize=IMAGE_SIZE)
-	    # plt.imshow(image_np)
-	    # plt.show()
-	    #return image_np
 	    return dict(rect_points=rect_points, class_names=class_names, class_colors=class_colors)
 
 
 
 	def predict_reading(self,cv_image):
+
+		#resize image
 		image = imutils.resize(cv_image,width=400,height=300)
+
+		#model trained on ccw images
 		image = imutils.rotate(image,-90)
 
 		image_np = self.load_cvimage_into_numpy_array(image)
+
+		#detect position of dials
 		return_dict = self.detect_objects(image_np,self.sess,self.detection_graph)
 		rects = return_dict['rect_points']
+
+		#sort detected dials by position
 		rects = sorted(rects, key=lambda rect: rect['ymin'])
 		reading=''
 		count = 0
 		
 		for rect in rects:
+
+			#crop image corresponding to bounding rect
 			img = image_np[int(rect['ymin']*image.shape[0]):int(rect['ymax']*image.shape[0]),int(rect['xmin']*image.shape[1]):int(rect['xmax']*image.shape[1]),:]
-			digit = self.read_digit(img,count)
-			print(digit)
-	    	#except:
-	    	#	print("Error")
-	        #	digit = -1
+			
+			try:
+				#predict digit based on cropped image of dial
+				digit = self.read_digit(img,count)
+			except:
+				print("Error")
+				digit = -1
+			#append prediction to final reading
 			reading += str(digit)
-			count+=1    
+			count+=1   #switch between cw and ccw
     	
 		return reading
 
@@ -348,9 +380,11 @@ class MeterClassModel:
 
 
 	def __init__(self,model_name,path_to_ckpt):
-		MODEL_NAME = 'meter_model'
-		PATH_TO_CKPT = MODEL_NAME + '/frozen_meter_model.pb'
+		MODEL_NAME = model_name
+		PATH_TO_CKPT = MODEL_NAME + path_to_ckpt
 
+
+		#create a tensorflow graph from graph definition from file
 		detection_graph = tf.Graph()
 		with detection_graph.as_default():
 			od_graph_def = tf.GraphDef()
@@ -370,22 +404,30 @@ class MeterClassModel:
 	  	return np.array(image.getdata()).reshape(
 	    	(im_height, im_width, 1)).astype(np.uint8)
 
-	def predict(self,cv_image):
+	def predict(self,image):
 
-		gray = cv2.cvtColor(cv_image,cv2.COLOR_BGR2GRAY)
+		#convert to grayscale for prediction model
+		gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 
+		#converting PIL image from opencv image
 		im = Image.fromarray(gray)
 
+		#resize to fit to model
 		im = im.resize((96,96))
+		im = im.rotate(90)
 
 		image_np = self.load_image_into_numpy_array(im)
 		image_np_expanded = np.expand_dims(image_np, axis=0)
 
+		#get the input tensor
 		x_tensor = self.detection_graph.get_tensor_by_name('Reshape:0')
 
+		#get the output tensor
 		output = self.detection_graph.get_tensor_by_name('output/dense/BiasAdd:0')
 
+		#get output
 		out  = self.sess.run([output],feed_dict={x_tensor:image_np_expanded})
+
 
 		pred = np.argmax(out[0],axis=1)
 

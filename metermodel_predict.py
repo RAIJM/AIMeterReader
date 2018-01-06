@@ -3,6 +3,8 @@ import numpy as np
 import cv2
 import imutils
 from PIL import Image
+import os
+import matplotlib.pyplot as plt
 
 
 
@@ -17,8 +19,8 @@ with detection_graph.as_default():
 		od_graph_def.ParseFromString(serialized_graph)
 		tf.import_graph_def(od_graph_def, name='')
 
-	l = [n.name for n in detection_graph.as_graph_def().node]
-	print(l)
+	#l = [n.name for n in detection_graph.as_graph_def().node]
+	#print(l)
 	sess = tf.Session(graph=detection_graph)
 
 
@@ -27,11 +29,26 @@ def load_image_into_numpy_array(image):
   	return np.array(image.getdata()).reshape(
     	(im_height, im_width, 1)).astype(np.uint8)
 
-def predict(cv_image):
+def predict(image):
 
-		gray = cv2.cvtColor(cv_image,cv2.COLOR_BGR2GRAY)
+		gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+
+		#image = imutils.rotate(gray,90)
+
+		# plt.imshow(image)
+		# plt.show()
 		im = Image.fromarray(gray)
+		#gray = imutils.rotate(gray,-90)
+		#im = im.convert('L')
+		#im = Image.fromarray(gray)
+		
 		im = im.resize((96,96))
+		im = im.rotate(90)
+
+		
+
+		# plt.imshow(im)
+		# plt.show()
 
 
 		image_np = load_image_into_numpy_array(im)
@@ -52,11 +69,27 @@ def predict(cv_image):
 
 
 def main():
-   
-    image = cv2.imread('analog2.jpg')
-    
-    output = predict(image)
-    print(output)
+
+	files = [f for f in os.listdir('/home/stone/Documents/MeterImages/digital') if f.endswith('.jpg') or f.endswith('.jpeg')]
+   	analog_count = 0
+   	digital_count = 0
+   	for file in files:
+		print(file)
+		image = cv2.imread('/home/stone/Documents/MeterImages/digital/'+file)
+
+		# plt.imshow(image)
+		# plt.show()
+		#image = Image.open('/home/stone/Documents/MeterImages/digital/'+file)
+		output = predict(image)
+		print(output)
+
+		if output == 'analog':
+			analog_count += 1
+		else:
+			digital_count += 1
+		print("digital count %d analog count %d" %(digital_count,analog_count))
+		accuracy = digital_count/(float(len(files)))
+		print("accuracy %f " %(accuracy))
 
 
 if __name__ == '__main__':

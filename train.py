@@ -80,8 +80,8 @@ def train(path_to_dataset):
 
 		tf.train.write_graph(sess.graph_def, '.', 'meter_model.pbtxt')  
 
-		l = [n.name for n in tf.get_default_graph().as_graph_def().node]
-		print(l)
+		#l = [n.name for n in tf.get_default_graph().as_graph_def().node]
+		#print(l)
 
 		batch_count = num_train_examples // batch_size
 		for epoch_i in range(num_epochs):

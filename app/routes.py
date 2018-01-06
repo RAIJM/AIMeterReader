@@ -23,6 +23,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 
+
 meter_class_model = MeterClassModel('meter_model','/frozen_meter_model.pb')
 analog_model = AnalogMeterModel('analog_meter_model','/frozen_inference_graph.pb','analog_label_map.pbtxt')
 digital_model = DigitalMeterModel('digital_meter_model','/frozen_inference_graph.pb','digitalmeter_label_map.pbtxt')
@@ -42,19 +43,21 @@ def upload():
         in_memory_file = io.BytesIO()
         file.save(in_memory_file)
         data = np.fromstring(in_memory_file.getvalue(), dtype=np.uint8)
+
         color_image_flag = 1
         img = cv2.imdecode(data, color_image_flag)
 
+        print("Predicitng meter type..")
         meter_type = meter_class_model.predict(img)
 
         reading = ''
 
         if(meter_type == 'digital'):
-            
+            print("Predicitng digital..")
             img,reading = digital_model.predict_reading(img)
 
         else:
-            
+            print("Prediciting analog..")
             reading = analog_model.predict_reading(img)
 
 
