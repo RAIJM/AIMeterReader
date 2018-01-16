@@ -55,6 +55,11 @@ class DigitalMeterModel:
 		im_height = image.shape[0]
 		return image.reshape((im_height,im_width,3)).astype(np.uint8)
 
+	def load_image_into_numpy_array(self,image):
+		(im_width, im_height) = image.size
+	  	return np.array(image.getdata()).reshape(
+	    	(im_height, im_width, 3)).astype(np.uint8)
+
 
 
 	def detect_objects(self,image_np,sess,detection_graph):
@@ -98,18 +103,24 @@ class DigitalMeterModel:
 
 
 
-	def predict_reading(self,cv_image):
+	def predict_reading(self,im):
 
 		#resize image
-		img = imutils.resize(cv_image,width=400,height=300)
+		#img = imutils.resize(cv_image,width=400,height=300)
 		
 		#rotate image due to how model was trained
-		img = imutils.rotate(img,90)
+		#img = imutils.rotate(img,90)
+
+		#im = Image.fromarray(cv_image)
+		im = im.resize((300,400))
+		#im = im.rotate(90)
 
 
-		image_np = self.load_cvimage_into_numpy_array(cv_image)
+		#image_np = self.load_cvimage_into_numpy_array(cv_image)
 
-		data = self.detect_objects(img,self.sess,self.detection_graph)
+		image_np = self.load_image_into_numpy_array(im)
+
+		data = self.detect_objects(image_np,self.sess,self.detection_graph)
 
 		rec_points = data['rect_points']
 
@@ -172,6 +183,13 @@ class AnalogMeterModel:
 
 
 
+	def load_image_into_numpy_array(self,image):
+		(im_width, im_height) = image.size
+	  	return np.array(image.getdata()).reshape(
+	    	(im_height, im_width, 3)).astype(np.uint8)
+
+
+
 	'''
 		Args: numpy image, cw/ccw
 		Returns: reading between 0-9
@@ -180,7 +198,7 @@ class AnalogMeterModel:
 
 
 	'''
-	def read_digit(self,image_np,count):
+	def read_digit(self,image_np,count,prev_reading):
 	    
 		height = image_np.shape[1]
 		width = image_np.shape[0]
@@ -189,12 +207,12 @@ class AnalogMeterModel:
 		gray = cv2.cvtColor(image_np,cv2.COLOR_BGR2GRAY)
 
 		#return to upright orientation
-		rot = imutils.rotate(gray,90)
+		rot = imutils.rotate(gray,-90)
 	   
 
 		#threshold and open to isloate the pointer
 		thresh = cv2.adaptiveThreshold(rot.copy(),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-	            cv2.THRESH_BINARY_INV,25,10)
+	            cv2.THRESH_BINARY_INV,31,13)
 		kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
 		thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
@@ -210,8 +228,11 @@ class AnalogMeterModel:
 		#calculate the center of the pointer
 		M = cv2.moments(cnt)
 
-		cx = int(M['m10']/M['m00'])
-		cy = int(M['m01']/M['m00'])
+		# cx = int(M['m10']/M['m00'])
+		# cy = int(M['m01']/M['m00'])
+
+		cx = width/2
+		cy = height /2
 
 
 		#find all the white pixels
@@ -250,7 +271,6 @@ class AnalogMeterModel:
 		angle = angle % 360
 
 
-		#convert corresponding angle to number based on cw/ccw
 		if angle>=0 and angle <= 36:
 			if count % 2 == 0:
 				reading = 0
@@ -271,6 +291,7 @@ class AnalogMeterModel:
 				reading = 3
 			else:
 				reading = 6
+		
 		elif angle > 144 and angle <= 180:
 			if count % 2 == 0:
 				reading = 4
@@ -291,19 +312,136 @@ class AnalogMeterModel:
 				reading = 7
 			else:
 				reading = 2
-		
 		elif angle > 288 and angle <= 324:
 			if count % 2 == 0:
 				reading = 8
 			else:
 				reading = 1
-
 		elif angle > 324 and angle < 360:
 			if count % 2 == 0:
 				reading = 9
 			else:
 				reading = 0
 
+
+
+
+	    # edge cases where the dial is close to a number
+	    # must take into account previous reading to adjust for accuracy
+		if(prev_reading!=-1):
+			if((angle > 350 and angle<360) or angle < 10):
+				if (count %2 ==0):
+					if(prev_reading >= 5):
+						reading = 9
+					else:
+						reading = 0
+				else:
+					if(prev_reading >=5):
+						reading = 9
+					else:
+						reading = 0
+			elif(angle > 26 and angle <=46):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 0
+					else:
+						reading = 1
+				else:
+					if(prev_reading >=5):
+						reading = 8
+					else:
+						reading = 9
+			elif(angle > 62 and angle < 82):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 1
+					else:
+						reading = 2
+				else:
+					if(prev_reading >=5):
+						reading = 7
+					else:
+						reading = 8
+			elif(angle > 98 and angle < 118):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 2
+					else:
+						reading = 3
+				else:
+					if(prev_reading >=5):
+						reading = 6
+					else:
+						reading = 7
+			elif(angle > 134 and angle < 154):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 3
+					else:
+						reading = 4
+				else:
+					if(prev_reading >=5):
+						reading = 5
+					else:
+						reading = 6
+			elif(angle > 170  and angle < 190):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 4
+					else:
+						reading = 5
+				else:
+					if(prev_reading >=5):
+						reading = 4
+					else:
+						reading = 5
+			elif(angle > 206 and angle < 226):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 5
+					else:
+						reading = 6
+				else:
+					if(prev_reading >= 5):
+						reading = 3
+					else:
+						reading = 4
+			elif(angle > 242 and angle < 262):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 6
+					else:
+						reading = 7
+				else:
+					if(prev_reading >= 5):
+						reading = 2
+					else:
+						reading = 3
+	        
+			elif(angle > 278 and angle < 298):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 7
+					else:
+						reading = 8
+				else:
+					if(prev_reading >=5):
+						reading = 1
+					else:
+						reading = 2
+			elif(angle > 314 and angle < 334):
+				if count %2 ==0:
+					if(prev_reading >= 5):
+						reading = 8
+					else:
+						reading = 9
+				else:
+					if(prev_reading >= 5):
+						reading = 0
+					else:
+						reading = 1
+
+		print(reading)
 		return reading
 
 
@@ -339,15 +477,22 @@ class AnalogMeterModel:
 
 
 
-	def predict_reading(self,cv_image):
+	def predict_reading(self,image):
 
 		#resize image
-		image = imutils.resize(cv_image,width=400,height=300)
+		#image = imutils.resize(cv_image,width=400,height=300)
+
+		image = image.resize((400,300))
 
 		#model trained on ccw images
-		image = imutils.rotate(image,-90)
+		#image = imutils.rotate(image,-90)
 
-		image_np = self.load_cvimage_into_numpy_array(image)
+		image_np = self.load_image_into_numpy_array(image)
+
+		#image = image.resize((300,400))
+		#image_np = self.load_image_into_numpy_array(image)
+
+
 
 		#detect position of dials
 		return_dict = self.detect_objects(image_np,self.sess,self.detection_graph)
@@ -357,15 +502,16 @@ class AnalogMeterModel:
 		rects = sorted(rects, key=lambda rect: rect['ymin'])
 		reading=''
 		count = 0
+		digit = -1
 		
 		for rect in rects:
 
 			#crop image corresponding to bounding rect
-			img = image_np[int(rect['ymin']*image.shape[0]):int(rect['ymax']*image.shape[0]),int(rect['xmin']*image.shape[1]):int(rect['xmax']*image.shape[1]),:]
+			img = image_np[int(rect['ymin']*image.size[1]):int(rect['ymax']*image.size[1]),int(rect['xmin']*image.size[0]):int(rect['xmax']*image.size[0]),:]
 			
 			try:
 				#predict digit based on cropped image of dial
-				digit = self.read_digit(img,count)
+				digit = self.read_digit(img,count,digit)
 			except:
 				print("Error")
 				digit = -1
@@ -373,7 +519,7 @@ class AnalogMeterModel:
 			reading += str(digit)
 			count+=1   #switch between cw and ccw
     	
-		return reading
+		return reading[::-1]
 
 
 class MeterClassModel:
@@ -404,17 +550,18 @@ class MeterClassModel:
 	  	return np.array(image.getdata()).reshape(
 	    	(im_height, im_width, 1)).astype(np.uint8)
 
-	def predict(self,image):
+	def predict(self,im):
 
 		#convert to grayscale for prediction model
-		gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+		#gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 
 		#converting PIL image from opencv image
-		im = Image.fromarray(gray)
+		#im = Image.fromarray(gray)
 
 		#resize to fit to model
+		im = im.convert('L')
 		im = im.resize((96,96))
-		im = im.rotate(90)
+		#im = im.rotate(90)
 
 		image_np = self.load_image_into_numpy_array(im)
 		image_np_expanded = np.expand_dims(image_np, axis=0)

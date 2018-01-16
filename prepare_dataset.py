@@ -14,6 +14,7 @@ from scipy import ndimage
 import gzip
 import tensorflow as tf
 import unittest
+import cv2
 
 
 url = 'https://drive.google.com/uc?export=download&id=0B82rWclWut72cENaN0U1am05S1k'
@@ -85,10 +86,14 @@ def load_class(folder):
 	for image in image_files:
 		image_file = os.path.join(folder,image)
 		try:
-			image_data = Image.open(image_file) #opens image
-			image_data = image_data.convert('L') #converts to grayscale
-			image_data = image_data.resize((image_size,image_size)) #resize image to 96x96
-			imarray = np.array(image_data,dtype=np.float32)
+			# image_data = Image.open(image_file) #opens image
+			# image_data = image_data.convert('L') #converts to grayscale
+			# image_data = image_data.resize((image_size,image_size)) #resize image to 96x96
+			image_data = cv2.imread(image_file)
+			image_data = cv2.cvtColor(image_data,cv2.COLOR_BGR2GRAY)
+			im = Image.fromarray(image_data)
+			im = im.resize((image_size,image_size))
+			imarray = np.array(im,dtype=np.float32)
 			dataset[num_images,:,:] = imarray
 			num_images += 1
 		except IOError as e:

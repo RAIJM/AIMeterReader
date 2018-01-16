@@ -8,9 +8,10 @@ import cv2
 import os
 import zipfile
 import sys
-
+import time
 from collections import defaultdict
 from PIL import Image
+import matplotlib.pyplot as plt
 
 from models import *
 
@@ -38,6 +39,7 @@ def index():
 def upload():
     if request.method == 'POST':
         #	pass
+        start_time = time.time()
         print("Converting..")
         file = request.files['file']
         in_memory_file = io.BytesIO()
@@ -47,23 +49,30 @@ def upload():
         color_image_flag = 1
         img = cv2.imdecode(data, color_image_flag)
 
+        im_pil = Image.open(file)
+
+
+        print(time.time() - start_time)
+
         print("Predicitng meter type..")
-        meter_type = meter_class_model.predict(img)
+        meter_type = meter_class_model.predict(im_pil)
+        print(time.time() - start_time)
 
         reading = ''
 
         if(meter_type == 'digital'):
             print("Predicitng digital..")
-            img,reading = digital_model.predict_reading(img)
+            img,reading = digital_model.predict_reading(im_pil)
 
         else:
             print("Prediciting analog..")
-            reading = analog_model.predict_reading(img)
+            reading = analog_model.predict_reading(im_pil)
 
-
+        print(time.time() - start_time)
         print("Saving..")
         im = Image.fromarray(img)
         im.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+        print(time.time()-start_time)
        
     return json.dumps({'filename':file.filename,'reading':reading,'meter_type':meter_type})
 

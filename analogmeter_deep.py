@@ -67,20 +67,26 @@ def load_cvimage_into_numpy_array(image):
 
 
 
-def read_digit(image_np,count):
+def read_digit(image_np,count,prev_reading):
     height = image_np.shape[1]
     width = image_np.shape[0]
     gray = cv2.cvtColor(image_np,cv2.COLOR_BGR2GRAY)
 
-    rot = imutils.rotate(gray,90)
+    plt.imshow(gray)
+    plt.show()
+
+    rot = imutils.rotate(gray,-90)
+
+    plt.imshow(rot)
+    plt.show()
    
     thresh = cv2.adaptiveThreshold(rot.copy(),255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV,25,10)
+            cv2.THRESH_BINARY_INV,31,13)
     kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
-    plt.imshow(thresh)
-    plt.show()
+    # plt.imshow(thresh)
+    # plt.show()
 
 
     im2, contours, hierarchy = cv2.findContours(thresh, 1, 2)
@@ -99,8 +105,10 @@ def read_digit(image_np,count):
 
 
     #print M
-    cx = int(M['m10']/M['m00'])
-    cy = int(M['m01']/M['m00'])
+    # cx = int(M['m10']/M['m00'])
+    # cy = int(M['m01']/M['m00'])
+    cx = width/2
+    cy = height /2
     print('center: x %d y %d' %(cx,cy))
 
     cv2.circle(rot,(cx,cy), 1, (0,0,255), -1)
@@ -147,11 +155,14 @@ def read_digit(image_np,count):
 
     print("circle angle %f" %(angle))
 
+    angle = float(angle)
+
+
     if angle>=0 and angle <= 36:
-        if count % 2 == 0:
-            reading = 0
-        else:
-            reading = 9
+            if count % 2 == 0:
+                reading = 0
+            else:
+                reading = 9
     elif angle > 36 and angle <= 72:
         if count % 2 == 0:
             reading = 1
@@ -187,16 +198,137 @@ def read_digit(image_np,count):
             reading = 7
         else:
             reading = 2
+    
     elif angle > 288 and angle <= 324:
         if count % 2 == 0:
             reading = 8
         else:
             reading = 1
+
     elif angle > 324 and angle < 360:
         if count % 2 == 0:
             reading = 9
         else:
             reading = 0
+
+
+
+
+    # edge cases where the dial is close to a number
+    # must take into account previous reading to adjust for accuracy
+    if(prev_reading!=-1):
+        if((angle > 350 and angle<360) or angle < 10):
+            if (count %2 ==0):
+                if(prev_reading >= 5):
+                    reading = 9
+                else:
+                    reading = 0
+            else:
+                if(prev_reading >=5):
+                    reading = 9
+                else:
+                    reading = 0
+
+        elif(angle > 26 and angle <=46):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 0
+                else:
+                    reading = 1
+            else:
+                if(prev_reading >=5):
+                    reading = 8
+                else:
+                    reading = 9
+        elif(angle > 62 and angle < 82):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 1
+                else:
+                    reading = 2
+            else:
+                if(prev_reading >=5):
+                    reading = 7
+                else:
+                    reading = 8
+        elif(angle > 98 and angle < 118):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 2
+                else:
+                    reading = 3
+            else:
+                if(prev_reading >=5):
+                    reading = 6
+                else:
+                    reading = 7
+        elif(angle > 134 and angle < 154):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 3
+                else:
+                    reading = 4
+            else:
+                if(prev_reading >=5):
+                    reading = 5
+                else:
+                    reading = 6
+        elif(angle > 170  and angle < 190):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 4
+                else:
+                    reading = 5
+            else:
+                if(prev_reading >=5):
+                    reading = 4
+                else:
+                    reading = 5
+        elif(angle > 206 and angle < 226):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 5
+                else:
+                    reading = 6
+            else:
+                if(prev_reading >= 5):
+                    reading = 3
+                else:
+                    reading = 4
+        elif(angle > 242 and angle < 262):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 6
+                else:
+                    reading = 7
+            else:
+                if(prev_reading >= 5):
+                    reading = 2
+                else:
+                    reading = 3
+        
+        elif(angle > 278 and angle < 298):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 7
+                else:
+                    reading = 8
+            else:
+                if(prev_reading >=5):
+                    reading = 1
+                else:
+                    reading = 2
+        elif(angle > 314 and angle < 334):
+            if count %2 ==0:
+                if(prev_reading >= 5):
+                    reading = 8
+                else:
+                    reading = 9
+            else:
+                if(prev_reading >= 5):
+                    reading = 0
+                else:
+                    reading = 1
 
     print(reading)
     return reading
@@ -249,30 +381,27 @@ def detect_objects(image_np,sess,detection_graph):
 
 
 def main():
-    count =0;
-    #for image_path in TEST_IMAGE_PATHS:
-    # image = Image.open('analog_meter.jpg')
-    # image = image.resize((400,300))
-    # plt.imshow(image)
-    # plt.show()
-    image = cv2.imread('analog2.jpg')
-    image = imutils.resize(image,width=400,height=300)
-    image = imutils.rotate(image,-90)
+    
+    image = Image.open('analog8.jpg')
+    image = image.resize((400,300))
 
-    #image = image.rotate(90)
-    image_np = load_cvimage_into_numpy_array(image)
+    image_np = load_image_into_numpy_array(image)
     return_dict = detect_objects(image_np,sess,detection_graph)
     rects = return_dict['rect_points']
     rects = sorted(rects, key=lambda rect: rect['ymin'])
     reading=''
     count = 0
+    plt.imshow(image_np)
+    plt.show()
+    digit = -1
     for rect in rects:
-        img = image_np[int(rect['ymin']*image.shape[0]):int(rect['ymax']*image.shape[0]),int(rect['xmin']*image.shape[1]):int(rect['xmax']*image.shape[1]),:]
-        reading+=str(read_digit(img,count))
+        img = image_np[int(rect['ymin']*image.size[1]):int(rect['ymax']*image.size[1]),int(rect['xmin']*image.size[0]):int(rect['xmax']*image.size[0]),:]
+        digit = str(read_digit(img,count,int(digit)))
+        reading += digit
         count+=1
         plt.imshow(img)
         plt.show()
-    print(reading)
+    print(reading[::-1])
     #im = Image.fromarray(image_np)
     #im.save(str(count)+".jpg")
     #count+=1
