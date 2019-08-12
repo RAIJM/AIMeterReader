@@ -22,7 +22,7 @@ The functions do not return a value, instead they modify the image itself.
 import collections
 import functools
 import matplotlib
-matplotlib.use('agg')
+#matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image as Image

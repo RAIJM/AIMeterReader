@@ -15,9 +15,9 @@ import math
 import matplotlib.pyplot as plt
 
 
-sys.path.append("..")
-from utils import label_map_util
-from utils import visualization_utils as vis_util
+# sys.path.append("..")
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as vis_util
 
 CWD_PATH = os.getcwd()
 
@@ -25,12 +25,12 @@ MODEL_NAME = 'analog_meter_model'
 PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'analog_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('analog_meter_model', 'analog_label_map.pbtxt')
 
 NUM_CLASSES = 1
 
-PATH_TO_TEST_IMAGES_DIR = 'test_analog_images'
-TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 7) ]
+# PATH_TO_TEST_IMAGES_DIR = 'test_analog_images'
+# TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 7) ]
 
 # Loading label map
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -373,35 +373,36 @@ def detect_objects(image_np,sess,detection_graph):
     #     category_index,
     #     use_normalized_coordinates=True,
     #     line_thickness=2)
-    # #plt.figure(figsize=IMAGE_SIZE)
+    #plt.figure(figsize=IMAGE_SIZE)
     # plt.imshow(image_np)
     # plt.show()
-    #return image_np
+    # return image_np
     return dict(rect_points=rect_points, class_names=class_names, class_colors=class_colors)
 
 
 def main():
     
-    image = Image.open('analog8.jpg')
+    image = Image.open('analog.jpg')
     image = image.resize((400,300))
 
     image_np = load_image_into_numpy_array(image)
     return_dict = detect_objects(image_np,sess,detection_graph)
+    print(return_dict)
     rects = return_dict['rect_points']
     rects = sorted(rects, key=lambda rect: rect['ymin'])
     reading=''
     count = 0
     plt.imshow(image_np)
     plt.show()
-    digit = -1
-    for rect in rects:
-        img = image_np[int(rect['ymin']*image.size[1]):int(rect['ymax']*image.size[1]),int(rect['xmin']*image.size[0]):int(rect['xmax']*image.size[0]),:]
-        digit = str(read_digit(img,count,int(digit)))
-        reading += digit
-        count+=1
-        plt.imshow(img)
-        plt.show()
-    print(reading[::-1])
+    # digit = -1
+    # for rect in rects:
+    #     img = image_np[int(rect['ymin']*image.size[1]):int(rect['ymax']*image.size[1]),int(rect['xmin']*image.size[0]):int(rect['xmax']*image.size[0]),:]
+    #     digit = str(read_digit(img,count,int(digit)))
+    #     reading += digit
+    #     count+=1
+    #     plt.imshow(img)
+    #     plt.show()
+    # print(reading[::-1])
     #im = Image.fromarray(image_np)
     #im.save(str(count)+".jpg")
     #count+=1

@@ -13,7 +13,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 
-sys.path.append("..")
+# sys.path.append("..")
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
@@ -28,7 +28,8 @@ PATH_TO_LABELS = os.path.join('data', 'digitalmeter_label_map.pbtxt')
 NUM_CLASSES = 10
 
 PATH_TO_TEST_IMAGES_DIR = 'test_images'
-TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 11) ]
+TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, file) 
+                            for file in os.listdir(PATH_TO_TEST_IMAGES_DIR)]
 
 # Loading label map
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -79,6 +80,14 @@ def detect_objects(image_np,sess,detection_graph):
     (boxes, scores, classes, num_detections) = sess.run(
         [boxes, scores, classes, num_detections],
         feed_dict={image_tensor: image_np_expanded})
+
+   # rect_points, class_names, class_colors = draw_boxes_and_labels(
+   #      boxes=np.squeeze(boxes),
+   #      classes=np.squeeze(classes).astype(np.int32),
+   #      scores=np.squeeze(scores),
+   #      category_index=self.category_index,
+   #      min_score_thresh=.5
+   #  )
 
     # Visualization of the results of a detection.
     vis_util.visualize_boxes_and_labels_on_image_array(

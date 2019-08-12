@@ -5,13 +5,14 @@ import os
 import sys
 from utility import *
 from utils import label_map_util
+#import label_map_util
 from utils import visualization_utils as vis_util
 from PIL import Image
 import cv2
 import math
-sys.path.append("..")
-from utils import label_map_util
-from utils import visualization_utils as vis_util
+# sys.path.append("..")
+# from object_detection.utils import label_map_util
+# from object_detection.utils import visualization_utils as vis_util
 
 
 
@@ -20,10 +21,14 @@ class DigitalMeterModel:
 	def __init__(self,model_name,path_to_ckpt,labels_path):
 		
 		MODEL_NAME = model_name
-		PATH_TO_CKPT = MODEL_NAME + path_to_ckpt
+		PATH_TO_CKPT = os.path.join('data', MODEL_NAME + path_to_ckpt)
+
+		print(PATH_TO_CKPT)
 
 		# List of the strings that is used to add correct label for each box.
-		PATH_TO_LABELS = os.path.join('data', labels_path)
+		PATH_TO_LABELS = os.path.join('data', MODEL_NAME + labels_path)
+
+		print(PATH_TO_LABELS)
 
 		NUM_CLASSES = 10
 
@@ -57,8 +62,7 @@ class DigitalMeterModel:
 
 	def load_image_into_numpy_array(self,image):
 		(im_width, im_height) = image.size
-	  	return np.array(image.getdata()).reshape(
-	    	(im_height, im_width, 3)).astype(np.uint8)
+		return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
 
 
@@ -91,19 +95,19 @@ class DigitalMeterModel:
 	   
 
 	    # Visualization of the results of a detection.
-	    vis_util.visualize_boxes_and_labels_on_image_array(
-	        image_np,
-	        np.squeeze(boxes),
-	        np.squeeze(classes).astype(np.int32),
-	        np.squeeze(scores),
-	        self.category_index,
-	        use_normalized_coordinates=True,
-	        line_thickness=5)
+	    # vis_util.visualize_boxes_and_labels_on_image_array(
+	    #     image_np,
+	    #     np.squeeze(boxes),
+	    #     np.squeeze(classes).astype(np.int32),
+	    #     np.squeeze(scores),
+	    #     self.category_index,
+	    #     use_normalized_coordinates=True,
+	    #     line_thickness=5)
 	    return dict(image_np=image_np,rect_points=rect_points, class_names=class_names, class_colors=class_colors)
 
 
 
-	def predict_reading(self,im):
+	def predict_reading(self,cv_image):
 
 		#resize image
 		#img = imutils.resize(cv_image,width=400,height=300)
@@ -111,32 +115,40 @@ class DigitalMeterModel:
 		#rotate image due to how model was trained
 		#img = imutils.rotate(img,90)
 
-		#im = Image.fromarray(cv_image)
-		im = im.resize((300,400))
-		#im = im.rotate(90)
+		# im = Image.fromarray(cv_image)
+		# im = im.resize((300,400))
+		# im = im.rotate(90)
 
 
-		#image_np = self.load_cvimage_into_numpy_array(cv_image)
+		image_np = self.load_cvimage_into_numpy_array(cv_image)
 
-		image_np = self.load_image_into_numpy_array(im)
+		# image_np = self.load_image_into_numpy_array(im)
 
 		data = self.detect_objects(image_np,self.sess,self.detection_graph)
 
 		rec_points = data['rect_points']
 
 		class_names = data['class_names']
-
+ 
 		img = data['image_np']
 
 		#sort bounding rects by ymin
-		sorted_by_second = sorted(zip(rec_points, class_names), key=lambda tup: tup[0]['ymin'], reverse=True)
+		sorted_by_second = sorted(zip(rec_points, class_names), key=lambda tup: tup[0]['xmin'])
 
-		reading = ''
+		readings = []
 		#append prediction to reading
+
+
 		for el in sorted_by_second:
-			reading+=el[1][0][0]
-       		
-		return img,reading
+			split_prob = el[1][0].split()
+			prob = split_prob[1]
+			num = split_prob[0]
+			obj = {}
+			obj['number'] = num[0]
+			obj['prob'] = prob
+			obj['dimen'] = el[0]
+			readings.append(obj)
+		return readings
 
 
 
@@ -146,12 +158,12 @@ class AnalogMeterModel:
 	def __init__(self,model_name,path_to_ckpt,labels_path):
 		
 		MODEL_NAME = model_name
-		PATH_TO_CKPT = MODEL_NAME + path_to_ckpt
+		PATH_TO_CKPT = os.path.join('data', MODEL_NAME + path_to_ckpt)
 
 		# List of the strings that is used to add correct label for each box.
-		PATH_TO_LABELS = os.path.join('data', labels_path)
+		PATH_TO_LABELS = os.path.join('data', MODEL_NAME + labels_path)
 
-		NUM_CLASSES = 1
+		NUM_CLASSES = 10
 
 		# Loading label map
 		label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -185,8 +197,7 @@ class AnalogMeterModel:
 
 	def load_image_into_numpy_array(self,image):
 		(im_width, im_height) = image.size
-	  	return np.array(image.getdata()).reshape(
-	    	(im_height, im_width, 3)).astype(np.uint8)
+		return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
 
 
@@ -479,109 +490,91 @@ class AnalogMeterModel:
 
 	def predict_reading(self,image):
 
-		#resize image
-		#image = imutils.resize(cv_image,width=400,height=300)
+		image_np = self.load_cvimage_into_numpy_array(image)
 
-		image = image.resize((400,300))
+		data = self.detect_objects(image_np,self.sess,self.detection_graph)
 
-		#model trained on ccw images
-		#image = imutils.rotate(image,-90)
+		rec_points = data['rect_points']
 
-		image_np = self.load_image_into_numpy_array(image)
+		class_names = data['class_names']
+ 
 
-		#image = image.resize((300,400))
-		#image_np = self.load_image_into_numpy_array(image)
+		#sort bounding rects by ymin
+		sorted_by_second = sorted(zip(rec_points, class_names), key=lambda tup: tup[0]['xmin'])
 
-
-
-		#detect position of dials
-		return_dict = self.detect_objects(image_np,self.sess,self.detection_graph)
-		rects = return_dict['rect_points']
-
-		#sort detected dials by position
-		rects = sorted(rects, key=lambda rect: rect['ymin'])
-		reading=''
-		count = 0
-		digit = -1
+		readings = []
 		
-		for rect in rects:
-
-			#crop image corresponding to bounding rect
-			img = image_np[int(rect['ymin']*image.size[1]):int(rect['ymax']*image.size[1]),int(rect['xmin']*image.size[0]):int(rect['xmax']*image.size[0]),:]
-			
-			try:
-				#predict digit based on cropped image of dial
-				digit = self.read_digit(img,count,digit)
-			except:
-				print("Error")
-				digit = -1
-			#append prediction to final reading
-			reading += str(digit)
-			count+=1   #switch between cw and ccw
-    	
-		return reading[::-1]
+		for el in sorted_by_second:
+			split_prob = el[1][0].split()
+			prob = split_prob[1]
+			num = split_prob[0]
+			obj = {}
+			obj['number'] = num[0]
+			obj['prob'] = prob
+			obj['dimen'] = el[0]
+			readings.append(obj)
+		return readings
 
 
-class MeterClassModel:
+# class MeterClassModel:
 
 
-	def __init__(self,model_name,path_to_ckpt):
-		MODEL_NAME = model_name
-		PATH_TO_CKPT = MODEL_NAME + path_to_ckpt
+# 	def __init__(self,model_name,path_to_ckpt):
+# 		MODEL_NAME = model_name
+# 		PATH_TO_CKPT = MODEL_NAME + path_to_ckpt
 
 
-		#create a tensorflow graph from graph definition from file
-		detection_graph = tf.Graph()
-		with detection_graph.as_default():
-			od_graph_def = tf.GraphDef()
-			with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-				serialized_graph = fid.read()
-				od_graph_def.ParseFromString(serialized_graph)
-				tf.import_graph_def(od_graph_def, name='')
+# 		#create a tensorflow graph from graph definition from file
+# 		detection_graph = tf.Graph()
+# 		with detection_graph.as_default():
+# 			od_graph_def = tf.GraphDef()
+# 			with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+# 				serialized_graph = fid.read()
+# 				od_graph_def.ParseFromString(serialized_graph)
+# 				tf.import_graph_def(od_graph_def, name='')
 
-		# l = [n.name for n in detection_graph.as_graph_def().node]
-		# print(l)
-		self.detection_graph = detection_graph
-		self.sess = tf.Session(graph=detection_graph)
-
-
-	def load_image_into_numpy_array(self,image):
-		(im_width, im_height) = image.size
-	  	return np.array(image.getdata()).reshape(
-	    	(im_height, im_width, 1)).astype(np.uint8)
-
-	def predict(self,im):
-
-		#convert to grayscale for prediction model
-		#gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-
-		#converting PIL image from opencv image
-		#im = Image.fromarray(gray)
-
-		#resize to fit to model
-		im = im.convert('L')
-		im = im.resize((96,96))
-		#im = im.rotate(90)
-
-		image_np = self.load_image_into_numpy_array(im)
-		image_np_expanded = np.expand_dims(image_np, axis=0)
-
-		#get the input tensor
-		x_tensor = self.detection_graph.get_tensor_by_name('Reshape:0')
-
-		#get the output tensor
-		output = self.detection_graph.get_tensor_by_name('output/dense/BiasAdd:0')
-
-		#get output
-		out  = self.sess.run([output],feed_dict={x_tensor:image_np_expanded})
+# 		# l = [n.name for n in detection_graph.as_graph_def().node]
+# 		# print(l)
+# 		self.detection_graph = detection_graph
+# 		self.sess = tf.Session(graph=detection_graph)
 
 
-		pred = np.argmax(out[0],axis=1)
+# 	def load_image_into_numpy_array(self,image):
+# 		(im_width, im_height) = image.size
+# 		return np.array(image.getdata()).reshape((im_height, im_width, 1)).astype(np.uint8)
 
-		if (pred[0] == 1):
-			return 'digital'
-		else:
-			return 'analog'
+# 	def predict(self,im):
+
+# 		#convert to grayscale for prediction model
+# 		#gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+
+# 		#converting PIL image from opencv image
+# 		#im = Image.fromarray(gray)
+
+# 		#resize to fit to model
+# 		im = im.convert('L')
+# 		im = im.resize((96,96))
+# 		#im = im.rotate(90)
+
+# 		image_np = self.load_image_into_numpy_array(im)
+# 		image_np_expanded = np.expand_dims(image_np, axis=0)
+
+# 		#get the input tensor
+# 		x_tensor = self.detection_graph.get_tensor_by_name('Reshape:0')
+
+# 		#get the output tensor
+# 		output = self.detection_graph.get_tensor_by_name('output/dense/BiasAdd:0')
+
+# 		#get output
+# 		out  = self.sess.run([output],feed_dict={x_tensor:image_np_expanded})
+
+
+# 		pred = np.argmax(out[0],axis=1)
+
+# 		if (pred[0] == 1):
+# 			return 'digital'
+# 		else:
+# 			return 'analog'
 
 
 

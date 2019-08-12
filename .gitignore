@@ -1,4 +1,5 @@
 *.pyc
+.DS_Store
 venv/
 Meter\ Images/
 *.zip
@@ -12,6 +13,8 @@ data/
 digital_meter_model/
 *.ckpt.*
 *.pbtxt
+*.pb
+*.png
 analog_meter_model/
 meter_model/
 app/analog_meter_model

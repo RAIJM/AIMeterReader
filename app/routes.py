@@ -26,8 +26,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 meter_class_model = MeterClassModel('meter_model','/frozen_meter_model.pb')
-analog_model = AnalogMeterModel('analog_meter_model','/frozen_inference_graph.pb','analog_label_map.pbtxt')
-digital_model = DigitalMeterModel('digital_meter_model','/frozen_inference_graph.pb','digitalmeter_label_map.pbtxt')
+analog_model = AnalogMeterModel('analog_meter_model','/frozen_inference_graph.pb','/analog_label_map.pbtxt')
+digital_model = DigitalMeterModel('digital_meter_model','/frozen_inference_graph.pb','/labelmap.pbtxt')
     
 
 @app.route('/', methods=['GET'])
@@ -49,32 +49,35 @@ def upload():
         color_image_flag = 1
         img = cv2.imdecode(data, color_image_flag)
 
-        im_pil = Image.open(file)
+        print('Shape', img.shape)
+
+        #im_pil = Image.open(file)
 
 
-        print(time.time() - start_time)
+        print('Time to decode', time.time() - start_time, ' seconds')
 
-        print("Predicitng meter type..")
-        meter_type = meter_class_model.predict(im_pil)
-        print(time.time() - start_time)
+        # print("Predicitng meter type..")
+        # meter_type = meter_class_model.predict(im_pil)
+        # print(time.time() - start_time)
 
         reading = ''
+        meter_type = 'digital'
 
-        if(meter_type == 'digital'):
-            print("Predicitng digital..")
-            img,reading = digital_model.predict_reading(im_pil)
+        #if(meter_type == 'digital'):
+        print("Predicitng digital..")
+        img,readings = digital_model.predict_reading(img)
 
-        else:
-            print("Prediciting analog..")
-            reading = analog_model.predict_reading(im_pil)
+        # else:
+        #     print("Prediciting analog..")
+        #     reading = analog_model.predict_reading(im_pil)
 
-        print(time.time() - start_time)
-        print("Saving..")
-        im = Image.fromarray(img)
-        im.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+        #print(time.time() - start_time)
+        # print("Saving..")
+        # im = Image.fromarray(img)
+        # im.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
         print(time.time()-start_time)
        
-    return json.dumps({'filename':file.filename,'reading':reading,'meter_type':meter_type})
+    return json.dumps({'filename':file.filename,'reading':readings,'meter_type':meter_type})
 
 
 
