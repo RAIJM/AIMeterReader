@@ -6,6 +6,7 @@ import os
 import pandas as pd 
 import matplotlib
 from matplotlib import pyplot as plt
+import math
 
 #matplotlib.use("TkAgg")
 
@@ -15,7 +16,7 @@ from matplotlib import pyplot as plt
 # digital_model = DigitalMeterModel('digital_meter_model','/nas_33705.pb',
 # 											'/labelmap.pbtxt')
 
-analog_model = AnalogMeterModel('analog_meter_model', '/frozen_inference_graph.pb', 
+analog_model = AnalogMeterModel('analog_meter_model', '/analog_faster_rcnn.pb', 
 		'/analog_label_map.pbtxt')
 
 
@@ -59,7 +60,7 @@ for index,img in enumerate(files):
 	img_count += 1
 	if reading_str == '':
 		reading_str = '0'
-	if(str(int(reading_str))==str(l[index])):
+	if(math.abs(l[index]-int(reading_str)) <=1):
 		num_match+=1
 	print(num_match)
 # 	#readings_lst.append(reading_str)
