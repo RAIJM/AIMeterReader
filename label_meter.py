@@ -28,6 +28,7 @@ TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, file)
 df = pd.read_csv('analog_readings.csv')
 # df = df.replace(np.nan, 0)
 l = df['label'].to_list()
+files = df['Name'].to_list()
 l = [int(i) for i in l]
 print(l)
 
@@ -36,9 +37,10 @@ label_readings = []
 num_match = 0
 img_count=0
 #print(TEST_IMAGE_PATHS)
-for index,img in enumerate(TEST_IMAGE_PATHS):
+print(files)
+for index,img in enumerate(files):
 	#print(img)
-	cv_img = cv2.imread(img,1)
+	cv_img = cv2.imread('test_analog/{}'.format(img),1)
 	# # #print(cv_img)
 	# plt.imshow(cv_img)
 	# plt.show()
@@ -55,8 +57,8 @@ for index,img in enumerate(TEST_IMAGE_PATHS):
 		reading_str+=num_dict['number']
 	print(l[index], reading_str)
 	img_count += 1
-	# # if reading_str == '':
-	# # 	reading_str = '0'
+	if reading_str == '':
+		reading_str = '0'
 	if(str(int(reading_str))==str(l[index])):
 		num_match+=1
 	print(num_match)
