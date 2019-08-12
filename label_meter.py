@@ -60,7 +60,7 @@ for index,img in enumerate(files):
 	img_count += 1
 	if reading_str == '':
 		reading_str = '0'
-	if(math.abs(l[index]-int(reading_str)) <=1):
+	if(abs(l[index]-int(reading_str)) <=1):
 		num_match+=1
 	print(num_match)
 # 	#readings_lst.append(reading_str)
