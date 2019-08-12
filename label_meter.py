@@ -26,7 +26,7 @@ TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, file)
 
 
 
-df = pd.read_csv('analog_readings.csv')
+df = pd.read_csv('analog_readings2.csv')
 # df = df.replace(np.nan, 0)
 l = df['label'].to_list()
 files = df['Name'].to_list()
