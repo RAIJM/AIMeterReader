@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 # digital_model = DigitalMeterModel('digital_meter_model','/nas_33705.pb',
 # 											'/labelmap.pbtxt')
 
-analog_model = AnalogMeterModel('analog_meter_model', '/analog_faster_rcnn.pb', 
+analog_model = AnalogMeterModel('analog_meter_model', '/frozen_inference_graph.pb', 
 		'/analog_label_map.pbtxt')
 
 
