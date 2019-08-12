@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt
 
-matplotlib.use("TkAgg")
+#matplotlib.use("TkAgg")
 
 
 
