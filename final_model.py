@@ -155,7 +155,7 @@ class ElectricMeterModel:
 			if 'd' in d:
 				is_digital = True
 			if i==0:
-				final_reading.append(int(d[1]))
+				final_reading.append(int(d[1x]))
 			elif('x' in d):
 				if(int(final_reading[i-1]) >= 5):
 					if(int(d[1]) == 0):
@@ -217,7 +217,7 @@ class ElectricMeterModel:
 					if i not in add_idxs:
 						el_removed.append(sorted_boxes[i])
 						break
-				if(abs(iou_lst[i] - med_iou)>0.1): 
+				elif(abs(iou_lst[i] - med_iou)>0.1): 
 					prob1 = float(sorted_boxes[i][1][0].split()[1][:2])
 					prob2 = float(sorted_boxes[i+1][1][0].split()[1][:2])
 					if(prob1 > prob2): #add the box that has the higher probability
