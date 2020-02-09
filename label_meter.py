@@ -1,5 +1,5 @@
 #from app.models import DigitalMeterModel
-from app.models import AnalogMeterModel
+#from app.models import AnalogMeterModel
 import cv2
 import numpy as np
 import os
@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt
 import math
+from final_model import ElectricMeterModel
+
 
 #matplotlib.use("TkAgg")
 
@@ -16,8 +18,10 @@ import math
 # digital_model = DigitalMeterModel('digital_meter_model','/nas_33705.pb',
 # 											'/labelmap.pbtxt')
 
-analog_model = AnalogMeterModel('analog_meter_model', '/analog_faster_rcnn.pb', 
-		'/analog_label_map.pbtxt')
+# analog_model = AnalogMeterModel('analog_meter_model', '/analog_faster_rcnn.pb', 
+# 		'/analog_label_map.pbtxt')
+electric_model = ElectricMeterModel('meter_model', '/frozen_inference_graph.pb', 
+ 		'/labelmap.pbtxt')
 
 
 PATH_TO_TEST_IMAGES_DIR = 'test_analog'
@@ -52,11 +56,12 @@ for index,img in enumerate(files):
 	# #readings = digital_model.predict_reading(cv_img)
 	if(l[index]==-1):
 		continue
-	readings = analog_model.predict_reading(cv_img)
+	#readings = analog_model.predict_reading(cv_img)
+	meter_type, reading_str, id_number, result, exception = electric_model.predict(cv_img)
 	#print(readings)
-	for num_dict in readings:
-		reading_str+=num_dict['number']
-	print(l[index], reading_str)
+	# for num_dict in readings:
+	# 	reading_str+=num_dict['number']
+	# print(l[index], reading_str)
 	img_count += 1
 	if reading_str == '':
 		reading_str = '0'
