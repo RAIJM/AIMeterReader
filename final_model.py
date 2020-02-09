@@ -158,7 +158,10 @@ class ElectricMeterModel:
 				final_reading.append(int(d[1]))
 			elif('x' in d):
 				if(int(final_reading[i-1]) >= 5):
-					final_reading.append(int(d[1]) - 1)
+					if(int(d[1]) == 0):
+						final_reading.append(9)
+					else:
+						final_reading.append(int(d[1]) - 1)
 				else:
 					final_reading.append(int(d[1]))
 			else:
@@ -190,6 +193,7 @@ class ElectricMeterModel:
 			obj_n['dimen'] = el[0]
 			meter_id_numbers.append(obj_n)
 		result_dict['id_number'] = meter_id_numbers
+		#print(final_reading)
 		return meter_type, ''.join([str(f) for f in final_reading]), ''.join(id_numbers), result_dict, exception
 
 
