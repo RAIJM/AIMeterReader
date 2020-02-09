@@ -157,7 +157,7 @@ class ElectricMeterModel:
 			if i==0:
 				final_reading.append(int(d[1]))
 			elif('x' in d):
-				if(int(final_reading[i-1]) >= 5):
+				if(int(final_reading[i-1]) >= 6):
 					if(int(d[1]) == 0):
 						final_reading.append(9)
 					else:
