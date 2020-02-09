@@ -40,7 +40,7 @@ print(l)
 readings_lst = []
 label_readings = []
 num_match = 0
-exact_math = 0
+exact_match = 0
 img_count=0
 exception_match = 0
 #print(TEST_IMAGE_PATHS)
