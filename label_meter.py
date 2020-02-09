@@ -70,6 +70,7 @@ for index,img in enumerate(files):
 	if(abs(l[index]-int(reading_str)) <=1):
 		num_match+=1
 	else:
+		print(img)
 		if exception == 1:
 			exception_match += 1
 	
