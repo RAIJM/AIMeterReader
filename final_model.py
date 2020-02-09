@@ -155,7 +155,7 @@ class ElectricMeterModel:
 			if 'd' in d:
 				is_digital = True
 			if i==0:
-				final_reading.append(int(d[1x]))
+				final_reading.append(int(d[1]))
 			elif('x' in d):
 				if(int(final_reading[i-1]) >= 5):
 					if(int(d[1]) == 0):

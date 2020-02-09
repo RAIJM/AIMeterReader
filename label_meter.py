@@ -40,7 +40,9 @@ print(l)
 readings_lst = []
 label_readings = []
 num_match = 0
+exact_math = 0
 img_count=0
+exception_match = 0
 #print(TEST_IMAGE_PATHS)
 print(files)
 for index,img in enumerate(files):
@@ -67,13 +69,21 @@ for index,img in enumerate(files):
 		reading_str = '0'
 	if(abs(l[index]-int(reading_str)) <=1):
 		num_match+=1
-	print(num_match)
+	else:
+		if exception == 1:
+			exception_match += 1
+	
+	if(l[index] == int(reading_str)):
+		exact_match+=1
+	#print(num_match)
 # 	#readings_lst.append(reading_str)
 	print('{} / {} images'.format(index, len(TEST_IMAGE_PATHS)))
 
 # # # lst = [i for i in range(len(file_names))]
 # # #print('File names',file_names)
 print('Accuracy {}'.format((float(num_match)/img_count)))
+print('True Accuracy {}'.format((float(exact_match)/img_count)))
+print('Number of False Positive {}'.format(float(exception_match)/(img_count - num_match)))
 
 # print(file_names)
 # print(readings_lst)
