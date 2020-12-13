@@ -96,10 +96,17 @@ class ElectricMeterModel:
 		classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 		num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
+		
+		
+
+
 	    # Actual detection.
 		(boxes, scores, classes, num_detections) = self.sess.run(
 	        [boxes, scores, classes, num_detections],
 	        feed_dict={image_tensor: image_np_expanded})
+		
+		
+
 
 		# Visualization of the results of a detection.
 		rect_points, class_names, class_colors = draw_boxes_and_labels(
@@ -198,47 +205,79 @@ class ElectricMeterModel:
 
 
 
-	def filter_iou(self, sorted_boxes):
-		exception = 1
-		#handling intersections and double labels
-		iou_lst = []
-		el_removed = []
-		if(len(sorted_boxes) > 5):
-			exception = 2
+	# def filter_iou(self, sorted_boxes):
+	# 	exception = 1
+	# 	#handling intersections and double labels
+	# 	iou_lst = []
+	# 	el_removed = []
+	# 	if(len(sorted_boxes) > 5):
+	# 		exception = 2
 
-			iou_lst = [bb_intersection_over_union(sorted_boxes[i][0], 
-							sorted_boxes[i+1][0]) for i in range(len(sorted_boxes)-1)]
+	# 		iou_lst = [bb_intersection_over_union(sorted_boxes[i][0], 
+	# 						sorted_boxes[i+1][0]) for i in range(len(sorted_boxes)-1)]
 			
-			#find median iou
-			med_iou = statistics.median(iou_lst)
-			add_idxs = []
-			for i in range(len(iou_lst) + 1):
-				if i == len(iou_lst): 
-					if i not in add_idxs:
-						el_removed.append(sorted_boxes[i])
-						break
-				elif(abs(iou_lst[i] - med_iou)>0.1): 
-					prob1 = float(sorted_boxes[i][1][0].split()[1][:2])
-					prob2 = float(sorted_boxes[i+1][1][0].split()[1][:2])
-					if(prob1 > prob2): #add the box that has the higher probability
-						if(i not in add_idxs): #only add boxes that have not already been added
-							el_removed.append(sorted_boxes[i])
-							add_idxs.append(i)
-							add_idxs.append(i+1)
-					else:
-						if(i+1 not in add_idxs):
-							el_removed.append(sorted_boxes[i+1])
-							add_idxs.append(i+1)
-							add_idxs.append(i)
+	# 		#find median iou
+	# 		med_iou = statistics.median(iou_lst)
+	# 		add_idxs = []
+	# 		for i in range(len(iou_lst) + 1):
+	# 			if i == len(iou_lst): 
+	# 				if i not in add_idxs:
+	# 					el_removed.append(sorted_boxes[i])
+	# 					break
+	# 			elif(abs(iou_lst[i] - med_iou)>0.1): 
+	# 				prob1 = float(sorted_boxes[i][1][0].split()[1][:2])
+	# 				prob2 = float(sorted_boxes[i+1][1][0].split()[1][:2])
+	# 				if(prob1 > prob2): #add the box that has the higher probability
+	# 					if(i not in add_idxs): #only add boxes that have not already been added
+	# 						el_removed.append(sorted_boxes[i])
+	# 						add_idxs.append(i)
+	# 						add_idxs.append(i+1)
+	# 				else:
+	# 					if(i+1 not in add_idxs):
+	# 						el_removed.append(sorted_boxes[i+1])
+	# 						add_idxs.append(i+1)
+	# 						add_idxs.append(i)
+	# 			else:
+	# 				if(i not in add_idxs):
+	# 					add_idxs.append(i)
+	# 					el_removed.append(sorted_boxes[i])
+	# 	else:
+	# 		if(len(sorted_boxes) < 5):
+	# 			exception = 3
+	# 		el_removed = sorted_boxes
+
+	# 	return el_removed, exception
+
+	def filter_iou(self, sorted_boxes):
+		
+		def recursive_remove(boxes, med_iou):
+			if len(boxes) == 1:
+				return [boxes[0]]
+			elif(bb_intersection_over_union(boxes[0][0], #check if consecutive boxes overlap
+							boxes[1][0]) - med_iou > 0.1):
+				prob1 = float(boxes[0][1][0].split()[1][:2])
+				prob2 = float(boxes[1][1][0].split()[1][:2])
+				if(prob1 > prob2): #remove box with lower confidence
+					boxes.pop(1)
+					return recursive_remove(boxes, med_iou)
 				else:
-					if(i not in add_idxs):
-						add_idxs.append(i)
-						el_removed.append(sorted_boxes[i])
+					boxes.pop(0)
+					return recursive_remove(boxes, med_iou)
+			else:
+				box_to_add = boxes[0]
+				boxes.pop(0)
+				return [box_to_add] + recursive_remove(boxes, med_iou)
+		med_iou = statistics.median([bb_intersection_over_union(sorted_boxes[i][0], 
+	 						sorted_boxes[i+1][0]) for i in range(len(sorted_boxes)-1)])
+		extracted_boxes  = recursive_remove(sorted_boxes, med_iou) #remove duplicate boxes
+
+		if(len(extracted_boxes) == 5):
+			if len(sorted_boxes) > 5:
+				exception = 2
+			else:
+				exception = 1
 		else:
-			if(len(sorted_boxes) < 5):
-				exception = 3
-			el_removed = sorted_boxes
-
-		return el_removed, exception
-
+			exception = 3
+		
+		return extracted_boxes, exception
 
